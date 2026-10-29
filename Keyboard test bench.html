@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Keyboard test bench</title>
+<style>
+:root{--bg:#f6f7f4;--surface:#fff;--ink:#1d2320;--muted:#5d6a63;--line:#cdd5cf;--accent:#0d6b5c;--code:#e8eee9;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141916;--surface:#1d2420;--ink:#e8eee9;--muted:#9aa8a0;--line:#37423b;--accent:#4fc3ad;--code:#2a342e}}
+:root[data-theme="dark"]{--bg:#141916;--surface:#1d2420;--ink:#e8eee9;--muted:#9aa8a0;--line:#37423b;--accent:#4fc3ad;--code:#2a342e}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:640px;margin:0 auto;padding:20px 16px 48px}
+h1{font-size:1.5rem;margin:0 0 4px}
+h2{font-size:1.05rem;margin:28px 0 10px;color:var(--accent)}
+p.lead{margin:0;color:var(--muted)}
+.field{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px}
+label{display:block;font-weight:600;margin-bottom:2px}
+code{display:block;font:12px/1.4 ui-monospace,Menlo,monospace;background:var(--code);color:var(--muted);padding:4px 6px;border-radius:5px;margin:4px 0 8px;overflow-x:auto;white-space:nowrap}
+input,textarea,.ce{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px}
+input:focus,textarea:focus,.ce:focus{outline:2px solid var(--accent);outline-offset:1px}
+.ce{min-height:44px}
+input[type=range],input[type=color]{padding:2px}
+</style>
+</head>
+<body>
+<main>
+<h1>Keyboard test bench</h1>
+<p class="lead">Tap each field on your Android device and compare the keyboard layout, suggestions, capitalization and Enter key. The grey line under each label shows the attributes used.</p>
+<div id="root"></div>
+</main>
+<script>
+// [label, tag, attributes]
+var groups = [
+["Basic type values", [
+ ["text", "input", {type:"text"}],
+ ["text, spellcheck on", "input", {type:"text", spellcheck:"true"}],
+ ["text, spellcheck off", "input", {type:"text", spellcheck:"false"}],
+ ["search", "input", {type:"search"}],
+ ["email", "input", {type:"email"}],
+ ["email, multiple", "input", {type:"email", multiple:""}],
+ ["url", "input", {type:"url"}],
+ ["tel", "input", {type:"tel"}],
+ ["number", "input", {type:"number"}],
+ ["number, step 0.01", "input", {type:"number", step:"0.01"}],
+ ["number, pattern [0-9]*", "input", {type:"number", pattern:"[0-9]*"}],
+ ["password", "input", {type:"password"}],
+ ["textarea", "textarea", {rows:"3"}]
+]],
+["inputmode on a text field", [
+ ["inputmode none (no keyboard)", "input", {type:"text", inputmode:"none"}],
+ ["inputmode text", "input", {type:"text", inputmode:"text"}],
+ ["inputmode decimal", "input", {type:"text", inputmode:"decimal"}],
+ ["inputmode numeric", "input", {type:"text", inputmode:"numeric"}],
+ ["inputmode numeric + pattern [0-9]*", "input", {type:"text", inputmode:"numeric", pattern:"[0-9]*"}],
+ ["inputmode tel", "input", {type:"text", inputmode:"tel"}],
+ ["inputmode search", "input", {type:"text", inputmode:"search"}],
+ ["inputmode email", "input", {type:"text", inputmode:"email"}],
+ ["inputmode url", "input", {type:"text", inputmode:"url"}]
+]],
+["Capitalization and correction", [
+ ["autocapitalize off", "input", {type:"text", autocapitalize:"off"}],
+ ["autocapitalize sentences", "input", {type:"text", autocapitalize:"sentences"}],
+ ["autocapitalize words", "input", {type:"text", autocapitalize:"words"}],
+ ["autocapitalize characters", "input", {type:"text", autocapitalize:"characters"}],
+ ["autocorrect off, autocomplete off", "input", {type:"text", autocorrect:"off", autocomplete:"off"}],
+ ["spellcheck on, autocapitalize on (textarea)", "textarea", {rows:"2", spellcheck:"true", autocapitalize:"sentences"}]
+]],
+["Enter key hint", [
+ ["enterkeyhint enter", "input", {type:"text", enterkeyhint:"enter"}],
+ ["enterkeyhint done", "input", {type:"text", enterkeyhint:"done"}],
+ ["enterkeyhint go", "input", {type:"text", enterkeyhint:"go"}],
+ ["enterkeyhint next", "input", {type:"text", enterkeyhint:"next"}],
+ ["enterkeyhint previous", "input", {type:"text", enterkeyhint:"previous"}],
+ ["enterkeyhint search", "input", {type:"text", enterkeyhint:"search"}],
+ ["enterkeyhint send", "input", {type:"text", enterkeyhint:"send"}]
+]],
+["Autofill hints", [
+ ["autocomplete username", "input", {type:"text", autocomplete:"username"}],
+ ["autocomplete current-password", "input", {type:"password", autocomplete:"current-password"}],
+ ["autocomplete new-password", "input", {type:"password", autocomplete:"new-password"}],
+ ["autocomplete one-time-code", "input", {type:"text", autocomplete:"one-time-code", inputmode:"numeric"}],
+ ["autocomplete name", "input", {type:"text", autocomplete:"name"}],
+ ["autocomplete street-address", "input", {type:"text", autocomplete:"street-address"}],
+ ["autocomplete cc-number", "input", {type:"text", autocomplete:"cc-number", inputmode:"numeric"}]
+]],
+["Date, time and other pickers", [
+ ["date", "input", {type:"date"}],
+ ["time", "input", {type:"time"}],
+ ["datetime-local", "input", {type:"datetime-local"}],
+ ["month", "input", {type:"month"}],
+ ["week", "input", {type:"week"}],
+ ["color", "input", {type:"color"}],
+ ["range", "input", {type:"range"}]
+]],
+["Other editable elements", [
+ ["contenteditable", "div", {contenteditable:"true", "class":"ce"}],
+ ["contenteditable plaintext-only", "div", {contenteditable:"plaintext-only", "class":"ce"}]
+]]
+];
+
+var root = document.getElementById("root"), n = 0;
+groups.forEach(function(g){
+  var h = document.createElement("h2"); h.textContent = g[0]; root.appendChild(h);
+  g[1].forEach(function(f){
+    var id = "f" + (++n), wrap = document.createElement("div"); wrap.className = "field";
+    var lab = document.createElement("label"); lab.htmlFor = id; lab.textContent = f[0];
+    var desc = [f[1]];
+    Object.keys(f[2]).forEach(function(k){ if(k!=="class") desc.push(k + (f[2][k]===""?"":'="' + f[2][k] + '"')); });
+    var code = document.createElement("code"); code.textContent = "<" + desc.join(" ") + ">";
+    var el = document.createElement(f[1]); el.id = id;
+    Object.keys(f[2]).forEach(function(k){ el.setAttribute(k, f[2][k]); });
+    if(f[1]==="div") el.setAttribute("role","textbox");
+    wrap.appendChild(lab); wrap.appendChild(code); wrap.appendChild(el);
+    root.appendChild(wrap);
+  });
+});
+</script>
+</body>
+</html>
